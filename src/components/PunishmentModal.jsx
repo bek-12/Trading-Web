@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { completePunishment, fmtMoney } from '../store';
+import { fmtMoney } from '../store';
 
 // ─── Violation type config ────────────────────────────────────────────────────
 function getConfig(violationType, meta) {
@@ -114,11 +114,12 @@ export default function PunishmentModal({ trade, violationType, meta, onDismiss 
 
   function handleDismiss() {
     if (!validation.done) return;
-    completePunishment(trade.id, {
+    // Pass punishment record back to parent — parent updates via API
+    onDismiss({
       violationType,
       punishmentText: text,
+      completedAt: new Date().toISOString(),
     });
-    onDismiss();
   }
 
   return (

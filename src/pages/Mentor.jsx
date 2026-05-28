@@ -4,7 +4,7 @@ import {
   today, getMentorChatForAccount, saveMentorChat, clearMentorChat,
   getCheckinForDate, getTradesForDate, getDailyPnL, getDailyZone,
   getDailyViolations, getCleanStreakDays, fmtMoney, generateId,
-  saveJournalEntry, getJournalForDate, getAccountCurrentBalance,
+  getAccountCurrentBalance,
 } from '../store';
 import {
   revengeTradeResponse,
@@ -241,7 +241,7 @@ function BookFlow({ ctx, onDone }) {
 
 // ─── Main Mentor page ─────────────────────────────────────────────────────────
 export default function Mentor() {
-  const { activeAccount, meta } = useAccount();
+  const { activeAccount, meta, trades, checkins, saveJournalEntry } = useAccount();
   const dateStr = today();
   const accountId = activeAccount?.id || '__no_account__';
 
@@ -253,13 +253,13 @@ export default function Mentor() {
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Live context — re-read on every render so it's always fresh
-  const checkin     = activeAccount ? getCheckinForDate(activeAccount.id, dateStr) : null;
-  const todayTrades = activeAccount ? getTradesForDate(activeAccount.id, dateStr) : [];
-  const dailyPnL    = activeAccount ? getDailyPnL(activeAccount.id, dateStr) : 0;
+  // Live context from API data
+  const checkin     = getCheckinForDate(checkins, dateStr);
+  const todayTrades = getTradesForDate(trades, dateStr);
+  const dailyPnL    = getDailyPnL(trades, dateStr);
   const zone        = getDailyZone(dailyPnL, meta);
-  const violations  = activeAccount ? getDailyViolations(activeAccount.id, dateStr) : [];
-  const streak      = activeAccount ? getCleanStreakDays(activeAccount.id) : 0;
+  const violations  = getDailyViolations(trades, dateStr);
+  const streak      = getCleanStreakDays(trades);
 
   const ctx = { account: activeAccount, meta, checkin, todayTrades, dailyPnL, zone, violations, streak };
 
@@ -328,23 +328,13 @@ export default function Mentor() {
   function handleBookDone(answers) {
     setActiveFlow(null);
 
-    // Save to journal
-    if (activeAccount) {
-      const existing = getJournalForDate(activeAccount.id, dateStr);
+    // Save to journal via context API
+    if (activeAccount && saveJournalEntry) {
       const bookSection = BOOK_QUESTIONS
         .map(q => `${q.text}\n${answers[q.id] || '(skipped)'}`)
         .join('\n\n');
-      const newText = existing?.text
-        ? existing.text + '\n\n─── Book Check-In ───\n' + bookSection
-        : '─── Book Check-In ───\n' + bookSection;
-
-      saveJournalEntry({
-        id: existing?.id || (activeAccount.id + '_journal_' + dateStr),
-        accountId: activeAccount.id,
-        date: dateStr,
-        text: newText,
-        timestamp: new Date().toISOString(),
-      });
+      const newText = '─── Book Check-In ───\n' + bookSection;
+      saveJournalEntry({ accountId: activeAccount.id, date: dateStr, text: newText }).catch(() => {});
     }
 
     const summary = bookCheckInSummary(answers, ctx);
@@ -451,7 +441,7 @@ export default function Mentor() {
               <div>Trades today: <strong>{todayTrades.length}</strong></div>
               <div>Clean streak: <strong style={{ color: 'var(--accent)' }}>{streak}d</strong></div>
               <div>Check-in: <strong>{checkin ? `✅ "${checkin.moodWord}" (${checkin.mood}/5)` : '❌ Not done'}</strong></div>
-              {activeAccount && <div>Real capital above floor: <strong>{fmtMoney(getAccountCurrentBalance(activeAccount.id) - (meta?.accountFloor || 0))}</strong></div>}
+              {activeAccount && <div>Real capital above floor: <strong>{fmtMoney(getAccountCurrentBalance(activeAccount, trades) - (meta?.accountFloor || 0))}</strong></div>}
             </div>
           </div>
         )}

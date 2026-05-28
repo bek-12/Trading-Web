@@ -9,9 +9,9 @@ function zoneColor(zone) {
 }
 
 function capitalRemaining(account, meta) {
-  // Use live balance computed from trades, not the stored field
-  const cur = account?.id ? getAccountCurrentBalance(account.id) : (account?.startingBalance || 0);
-  return cur - (meta?.accountFloor || 0);
+  // ctx.account has trades passed separately — use meta.realCapital as fallback
+  // The actual live balance is computed in the component and passed via ctx
+  return (meta?.realCapital || 0);
 }
 
 function lossesToday(todayTrades) {
