@@ -21,7 +21,7 @@ export function AccountProvider({ children, user }) {
   const meta = calcAccountMeta(activeAccount);
 
   // Trades and checkins scoped to active account
-  const { trades, loading: tradesLoading, fetchTrades, addTrade, updateTrade } =
+  const { trades, loading: tradesLoading, fetchTrades, addTrade, updateTrade, completePunishment } =
     useTrades(user, activeAccount?.id);
 
   const { checkins, loading: checkinsLoading, fetchCheckins, addCheckin } =
@@ -59,7 +59,7 @@ export function AccountProvider({ children, user }) {
       addAccount, updateAccount, deleteAccount,
 
       // Trades
-      trades, tradesLoading, fetchTrades, addTrade, updateTrade,
+      trades, tradesLoading, fetchTrades, addTrade, updateTrade, completePunishment,
 
       // Checkins
       checkins, checkinsLoading, fetchCheckins, addCheckin,

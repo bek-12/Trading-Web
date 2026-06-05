@@ -124,7 +124,7 @@ function ViolationDetail({ trade, onCompletePunishment, meta }) {
 
 // ─── Main TradeLog page ───────────────────────────────────────────────────────
 export default function TradeLog() {
-  const { activeAccount, meta, trades, updateTrade } = useAccount();
+  const { activeAccount, meta, trades, updateTrade, completePunishment } = useAccount();
 
   if (!activeAccount) return <div className="alert alert-red">No account selected.</div>;
 
@@ -141,15 +141,8 @@ export default function TradeLog() {
   }
 
   async function handleCompletePunishment(tradeId, punishmentRecord) {
-    const trade = allTrades.find(t => t.id === tradeId);
-    if (!trade) throw new Error('Trade not found');
-    // Throws on failure — PunishmentModal will catch and show error
-    await updateTrade(tradeId, {
-      ...trade,
-      punishmentCompleted: true,
-      punishmentRecord,
-    });
-    // updateTrade already updates local state — UI refreshes automatically
+    // Uses PATCH — only sends punishment fields, no risk of result constraint failure
+    await completePunishment(tradeId, punishmentRecord);
   }
 
   const filtered = allTrades.filter(t => {

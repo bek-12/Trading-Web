@@ -71,8 +71,8 @@ export default async function handler(req, res) {
          WHERE id = $13 AND user_id = $14
          RETURNING *`,
         [
-          t.result,
-          t.pnl || 0,
+          t.result || 'Breakeven',          // never send null — default to Breakeven
+          t.pnl != null ? parseFloat(t.pnl) : 0,
           t.notes || null,
           t.movedSL || false,
           t.revengeFlag || false,
@@ -96,6 +96,40 @@ export default async function handler(req, res) {
     } catch (err) {
       console.error('PUT trade error:', err.message, err.stack);
       return res.status(500).json({ error: err.message || 'Failed to update trade' });
+    }
+  }
+
+  // PATCH — complete punishment only (minimal update, avoids spreading full trade)
+  if (req.method === 'PATCH') {
+    try {
+      const { punishmentText, completedAt, violationType } = req.body;
+      const completedAtTs = completedAt || new Date().toISOString();
+
+      const result = await query(
+        `UPDATE trades SET
+           punishment_completed = true,
+           punishment_text = $1,
+           punishment_completed_at = $2,
+           punishment_record = $3
+         WHERE id = $4 AND user_id = $5
+         RETURNING *`,
+        [
+          punishmentText || null,
+          completedAtTs,
+          JSON.stringify({ violationType, punishmentText, completedAt: completedAtTs }),
+          id,
+          user.userId,
+        ]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Trade not found' });
+      }
+
+      return res.status(200).json(rowToTrade(result.rows[0]));
+    } catch (err) {
+      console.error('PATCH trade punishment error:', err.message, err.stack);
+      return res.status(500).json({ error: err.message || 'Failed to save punishment' });
     }
   }
 

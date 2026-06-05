@@ -3,26 +3,32 @@ import { requireAuth, cors } from '../middleware/auth.js';
 
 function rowToTrade(row) {
   return {
-    id:                  row.id,
-    accountId:           row.account_id,
-    date:                row.date instanceof Date ? row.date.toISOString().split('T')[0] : row.date,
-    pair:                row.pair,
-    direction:           row.direction,
-    entry:               row.entry !== null ? parseFloat(row.entry) : null,
-    stopLoss:            row.stop_loss !== null ? parseFloat(row.stop_loss) : null,
-    takeProfit:          row.take_profit !== null ? parseFloat(row.take_profit) : null,
-    riskAmount:          row.risk_amount !== null ? parseFloat(row.risk_amount) : null,
-    result:              row.result,
-    pnl:                 parseFloat(row.pnl || 0),
-    notes:               row.notes,
-    movedSL:             row.moved_sl,
-    revengeFlag:         row.revenge_flag,
-    oversizedPosition:   row.oversized_position,
-    twoLossRuleBroken:   row.two_loss_rule_broken,
-    hasViolation:        row.has_violation,
-    punishmentCompleted: row.punishment_completed,
-    punishmentRecord:    row.punishment_record,
-    timestamp:           row.created_at,
+    id:                     row.id,
+    accountId:              row.account_id,
+    date:                   row.date instanceof Date ? row.date.toISOString().split('T')[0] : row.date,
+    pair:                   row.pair,
+    direction:              row.direction,
+    entry:                  row.entry !== null ? parseFloat(row.entry) : null,
+    stopLoss:               row.stop_loss !== null ? parseFloat(row.stop_loss) : null,
+    takeProfit:             row.take_profit !== null ? parseFloat(row.take_profit) : null,
+    riskAmount:             row.risk_amount !== null ? parseFloat(row.risk_amount) : null,
+    result:                 row.result,
+    pnl:                    parseFloat(row.pnl || 0),
+    notes:                  row.notes,
+    movedSL:                row.moved_sl,
+    revengeFlag:            row.revenge_flag,
+    oversizedPosition:      row.oversized_position,
+    twoLossRuleBroken:      row.two_loss_rule_broken,
+    hasViolation:           row.has_violation,
+    punishmentCompleted:    row.punishment_completed,
+    punishmentText:         row.punishment_text || null,
+    punishmentCompletedAt:  row.punishment_completed_at || null,
+    punishmentRecord:       row.punishment_record
+      ? row.punishment_record
+      : (row.punishment_text
+          ? { punishmentText: row.punishment_text, completedAt: row.punishment_completed_at }
+          : null),
+    timestamp:              row.created_at,
   };
 }
 

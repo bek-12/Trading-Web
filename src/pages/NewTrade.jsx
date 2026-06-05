@@ -25,7 +25,7 @@ function consecutiveLossesAtEnd(trades) {
 
 export default function NewTrade() {
   const navigate = useNavigate();
-  const { activeAccount, meta, trades, checkins, addTrade, updateTrade } = useAccount();
+  const { activeAccount, meta, trades, checkins, addTrade, updateTrade, completePunishment } = useAccount();
   const dateStr = today();
 
   const [answers, setAnswers] = useState({});
@@ -133,14 +133,9 @@ export default function NewTrade() {
   async function handlePunishmentDismiss(punishmentRecord) {
     const current = punishmentQueue[0];
     if (current?.trade?.id) {
-      // This throws on failure — PunishmentModal catches it and shows error
-      await updateTrade(current.trade.id, {
-        ...current.trade,
-        punishmentCompleted: true,
-        punishmentRecord: punishmentRecord,
-      });
+      // PATCH — only sends punishment fields, avoids result constraint issues
+      await completePunishment(current.trade.id, punishmentRecord);
     }
-    // Only advance queue after DB confirmed the save
     const remaining = punishmentQueue.slice(1);
     setPunishmentQueue(remaining);
     if (remaining.length === 0) {
