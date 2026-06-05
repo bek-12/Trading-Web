@@ -94,8 +94,8 @@ export default async function handler(req, res) {
 
       return res.status(200).json(rowToTrade(result.rows[0]));
     } catch (err) {
-      console.error('PUT trade error:', err);
-      return res.status(500).json({ error: 'Failed to update trade' });
+      console.error('PUT trade error:', err.message, err.stack);
+      return res.status(500).json({ error: err.message || 'Failed to update trade' });
     }
   }
 
