@@ -133,16 +133,14 @@ export default function NewTrade() {
   async function handlePunishmentDismiss(punishmentRecord) {
     const current = punishmentQueue[0];
     if (current?.trade?.id) {
-      try {
-        await updateTrade(current.trade.id, {
-          ...current.trade,
-          punishmentCompleted: true,
-          punishmentRecord: punishmentRecord,
-        });
-      } catch {
-        // best-effort — don't block the user
-      }
+      // This throws on failure — PunishmentModal catches it and shows error
+      await updateTrade(current.trade.id, {
+        ...current.trade,
+        punishmentCompleted: true,
+        punishmentRecord: punishmentRecord,
+      });
     }
+    // Only advance queue after DB confirmed the save
     const remaining = punishmentQueue.slice(1);
     setPunishmentQueue(remaining);
     if (remaining.length === 0) {

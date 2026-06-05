@@ -29,7 +29,9 @@ export function useTrades(user, accountId) {
   }, []);
 
   const updateTrade = useCallback(async (id, trade) => {
+    // Throws on failure — callers must handle the error
     const data = await apiFetch(`/trades/${id}`, { method: 'PUT', body: trade });
+    // Update local state immediately so UI reflects DB truth
     setTrades(prev => prev.map(t => t.id === id ? data : t));
     return data;
   }, []);

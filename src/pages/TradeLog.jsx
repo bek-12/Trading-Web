@@ -29,8 +29,11 @@ function ViolationDetail({ trade, onCompletePunishment, meta }) {
   const hasPunishment = trade.punishmentCompleted && trade.punishmentRecord;
 
   async function handleModalDismiss(record) {
-    setPendingModal(null);
+    // onCompletePunishment throws on failure — PunishmentModal catches it
+    // Do NOT close modal here — PunishmentModal closes itself by unmounting after onDismiss resolves
     await onCompletePunishment(trade.id, record);
+    // Only close after DB confirmed
+    setPendingModal(null);
   }
 
   return (
@@ -139,14 +142,14 @@ export default function TradeLog() {
 
   async function handleCompletePunishment(tradeId, punishmentRecord) {
     const trade = allTrades.find(t => t.id === tradeId);
-    if (!trade) return;
-    try {
-      await updateTrade(tradeId, {
-        ...trade,
-        punishmentCompleted: true,
-        punishmentRecord,
-      });
-    } catch {}
+    if (!trade) throw new Error('Trade not found');
+    // Throws on failure — PunishmentModal will catch and show error
+    await updateTrade(tradeId, {
+      ...trade,
+      punishmentCompleted: true,
+      punishmentRecord,
+    });
+    // updateTrade already updates local state — UI refreshes automatically
   }
 
   const filtered = allTrades.filter(t => {

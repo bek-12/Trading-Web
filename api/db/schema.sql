@@ -43,6 +43,8 @@ CREATE TABLE IF NOT EXISTS trades (
   two_loss_rule_broken  BOOLEAN DEFAULT FALSE,
   has_violation         BOOLEAN DEFAULT FALSE,
   punishment_completed  BOOLEAN DEFAULT FALSE,
+  punishment_text       TEXT,
+  punishment_completed_at TIMESTAMPTZ,
   punishment_record     JSONB,
   created_at            TIMESTAMPTZ DEFAULT NOW()
 );
@@ -84,3 +86,8 @@ CREATE TABLE IF NOT EXISTS mentor_chats (
 CREATE INDEX IF NOT EXISTS idx_trades_account_date ON trades(account_id, date);
 CREATE INDEX IF NOT EXISTS idx_checkins_account_date ON checkins(account_id, date);
 CREATE INDEX IF NOT EXISTS idx_journal_account_date ON journal_entries(account_id, date);
+
+-- ─── Migration: add punishment columns if upgrading from earlier schema ────────
+-- Run these if you already have the trades table without these columns:
+ALTER TABLE trades ADD COLUMN IF NOT EXISTS punishment_text TEXT;
+ALTER TABLE trades ADD COLUMN IF NOT EXISTS punishment_completed_at TIMESTAMPTZ;

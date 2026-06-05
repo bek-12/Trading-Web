@@ -148,11 +148,15 @@ export default function PunishmentModal({ trade, violationType, meta, onDismiss 
   const config = getViolationConfig(violationType, meta);
   const [text, setText] = useState('');
   const [validation, setValidation] = useState({ done: false, progress: '' });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   // Reset when violationType changes (queue processing)
   useEffect(() => {
     setText('');
     setValidation({ done: false, progress: '' });
+    setSubmitting(false);
+    setSubmitError('');
   }, [violationType]);
 
   // Validate single-textarea types
@@ -174,13 +178,22 @@ export default function PunishmentModal({ trade, violationType, meta, onDismiss 
     setValidation({ done, progress: result.progress });
   }
 
-  function handleDismiss() {
-    if (!validation.done) return;
-    onDismiss({
-      violationType,
-      punishmentText: text,
-      completedAt: new Date().toISOString(),
-    });
+  async function handleDismiss() {
+    if (!validation.done || submitting) return;
+    setSubmitting(true);
+    setSubmitError('');
+    try {
+      // onDismiss is async — wait for DB save before closing
+      await onDismiss({
+        violationType,
+        punishmentText: text,
+        completedAt: new Date().toISOString(),
+      });
+      // onDismiss resolves → modal unmounts automatically (parent removes it from queue)
+    } catch (err) {
+      setSubmitError('Failed to save. Please try again.');
+      setSubmitting(false);
+    }
   }
 
   const modal = (
@@ -314,22 +327,37 @@ export default function PunishmentModal({ trade, violationType, meta, onDismiss 
           )}
         </div>
 
+        {/* Save error */}
+        {submitError && (
+          <div style={{
+            background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)',
+            borderRadius: 6, padding: '8px 12px', marginBottom: 12,
+            fontSize: 13, color: '#fca5a5',
+          }}>
+            ⚠️ {submitError}
+          </div>
+        )}
+
         {/* Dismiss button */}
         <button
           onClick={handleDismiss}
-          disabled={!validation.done}
+          disabled={!validation.done || submitting}
           style={{
             width: '100%', padding: '14px',
             borderRadius: 8, border: 'none',
             fontWeight: 800, fontSize: 15,
-            cursor: validation.done ? 'pointer' : 'not-allowed',
-            background: validation.done ? '#22c55e' : '#1e2330',
+            cursor: (validation.done && !submitting) ? 'pointer' : 'not-allowed',
+            background: submitting ? '#166534' : validation.done ? '#22c55e' : '#1e2330',
             color: validation.done ? '#fff' : '#475569',
             transition: 'all 0.2s',
             letterSpacing: '0.02em',
           }}
         >
-          {validation.done ? 'I am accountable. Continue.' : 'Complete the task above to continue'}
+          {submitting
+            ? 'Saving to database…'
+            : validation.done
+              ? 'I am accountable. Continue.'
+              : 'Complete the task above to continue'}
         </button>
 
         <p style={{ textAlign: 'center', fontSize: 11, color: '#475569', marginTop: 10 }}>
